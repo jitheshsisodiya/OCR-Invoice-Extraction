@@ -7,6 +7,7 @@ from config import settings
 from core.logging import setup_logging
 from db.session import init_db
 from ocr.registry import init_default_engines
+from bundled import configure_environment
 
 # Import all models so SQLAlchemy can create tables
 from db.models.document import Document, DocumentPage  # noqa: F401
@@ -21,10 +22,12 @@ from api.v1 import documents, sessions, clips, extractions, validations, form_ex
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(debug=settings.debug)
+    # Configure Tesseract + Poppler paths (bundled or system)
+    configure_environment()
     settings.ensure_dirs()
     init_db(settings.database_url)
     init_default_engines(
-        tesseract_cmd=settings.tesseract_cmd,
+        tesseract_cmd=None,   # already set by configure_environment() via pytesseract
         easyocr_model_dir=settings.easyocr_model_dir,
     )
     yield
