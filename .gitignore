@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+.venv/
+venv/
+env/
+.env
+*.env
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Data dirs
+data/uploads/
+data/thumbnails/
+data/exports/
+
+# PyInstaller
+server/dist/
+server/build/
+*.spec
+
+# Node / taskpane
+taskpane/node_modules/
+taskpane/dist/
+taskpane/.vite/
+taskpane/.cache/
+
+# Installer output
+installer/Output/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# EasyOCR models (large, downloaded at runtime)
+models/
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/

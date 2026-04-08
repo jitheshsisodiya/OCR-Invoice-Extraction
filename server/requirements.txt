@@ -1,0 +1,37 @@
+# OCR
+pytesseract>=0.3.10
+easyocr>=1.7.1
+
+# PDF
+PyMuPDF>=1.24.0
+pdf2image>=1.17.0
+
+# Image processing
+opencv-python-headless>=4.10.0
+Pillow>=10.4.0
+
+# Table extraction
+camelot-py[cv]>=0.11.0
+tabula-py>=2.9.0
+
+# Excel export
+openpyxl>=3.1.5
+
+# FastAPI backend
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
+
+# Database
+sqlalchemy>=2.0.36
+
+# Validation / config
+pydantic>=2.9.0
+pydantic-settings>=2.5.0
+
+# AI
+anthropic>=0.36.0
+
+# Utilities
+loguru>=0.7.2
+python-dotenv>=1.0.1
