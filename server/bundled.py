@@ -61,6 +61,25 @@ def get_tesseract_cmd() -> str:
     return "tesseract"  # hope it's on PATH
 
 
+def get_taskpane_dir() -> Path | None:
+    """
+    Return the directory containing the built Task Pane static files.
+    In PyInstaller bundle: <MEIPASS>/taskpane/
+    In dev: <repo_root>/taskpane/dist/
+    """
+    # PyInstaller bundle: taskpane/ was added as --add-data "taskpane;taskpane"
+    bundled = _base_dir() / "taskpane"
+    if bundled.exists():
+        return bundled
+
+    # Dev environment: look for taskpane/dist next to the server/ directory
+    dev_dist = Path(__file__).parent.parent / "taskpane" / "dist"
+    if dev_dist.exists():
+        return dev_dist
+
+    return None
+
+
 def get_poppler_bin_dir() -> Path | None:
     """Return the directory containing Poppler executables, or None to use PATH."""
     bundled = _base_dir() / "poppler" / "bin"

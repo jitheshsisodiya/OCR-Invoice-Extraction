@@ -9,6 +9,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         taskpane: "src/index.html",
+        commands: "src/commands.html",
       },
     },
   },

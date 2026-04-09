@@ -1,11 +1,15 @@
 ; Inno Setup Script for OCR Invoice Extraction Excel Add-in
 ; Run with Inno Setup Compiler to produce setup.exe
+;
+; Pre-requisites (run from repo root on Windows):
+;   installer\build_server.bat    -> dist\server\   (PyInstaller output)
+;   installer\build_taskpane.bat  -> taskpane\dist\
 
 #define MyAppName "OCR Invoice Extraction"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "OCR Invoice Extraction"
-#define MyAppURL "https://localhost:3000"
-#define MyAppExeName "server.exe"
+#define MyAppURL "http://localhost:7432"
+#define MyAppExeName "server\server.exe"
 #define AddinGUID "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 
 [Setup]
@@ -23,6 +27,11 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=lowest
+; Installer visuals
+WizardImageFile=assets\installer_banner.bmp
+WizardSmallImageFile=assets\installer_small.bmp
+SetupIconFile=assets\installer_icon.ico
+UninstallDisplayIcon={app}\{#MyAppExeName}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -31,54 +40,64 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "startupentry"; Description: "Start OCR server automatically at Windows login"; GroupDescription: "Startup:"; Flags: unchecked
 
 [Files]
-; Python server executable (built by build_server.bat)
-Source: "..\server\dist\server.exe"; DestDir: "{app}"; Flags: ignoreversion
+; Python server bundle (PyInstaller --onedir output)
+Source: "..\dist\server\*"; DestDir: "{app}\server"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; Task Pane web files (built by build_taskpane.bat)
+; Task Pane web files (Vite build output)
 Source: "..\taskpane\dist\*"; DestDir: "{app}\taskpane"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; Office Add-in manifest
-Source: "..\taskpane\manifest.xml"; DestDir: "{app}"; Flags: ignoreversion
+; Production manifest (references localhost:7432, not localhost:3000)
+Source: "..\taskpane\manifest.prod.xml"; DestDir: "{app}"; DestName: "manifest.xml"; Flags: ignoreversion
 
-; Default .env config
+; Default .env — only written if it doesn't already exist (preserves user's API key)
 Source: "..\server\.env.example"; DestDir: "{app}"; DestName: ".env"; Flags: ignoreversion onlyifdoesntexist
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyAppName}";          Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 
 [Registry]
 ; Register the manifest directory as a trusted catalog for Excel add-ins
-Root: HKCU; Subkey: "Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{{{#AddinGUID}}"; ValueType: string; ValueName: "Id"; ValueData: "{{{#AddinGUID}}}"
-Root: HKCU; Subkey: "Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{{{#AddinGUID}}"; ValueType: string; ValueName: "Url"; ValueData: "{app}"
-Root: HKCU; Subkey: "Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{{{#AddinGUID}}"; ValueType: dword; ValueName: "Flags"; ValueData: "1"
+; Excel reads manifests from any directory listed under TrustedCatalogs.
+Root: HKCU; Subkey: "Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{{{#AddinGUID}}"; ValueType: string; ValueName: "Id";    ValueData: "{{{#AddinGUID}}}"
+Root: HKCU; Subkey: "Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{{{#AddinGUID}}"; ValueType: string; ValueName: "Url";   ValueData: "{app}"
+Root: HKCU; Subkey: "Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{{{#AddinGUID}}"; ValueType: dword;  ValueName: "Flags"; ValueData: "1"
 
-; Auto-start: add server to Windows startup (optional task)
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "OCRInvoiceServer"; ValueData: """{app}\server.exe"""; Tasks: startupentry
+; Auto-start server on Windows login (optional task)
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "OCRInvoiceServer"; \
+  ValueData: """{app}\{#MyAppExeName}"""; Tasks: startupentry
 
 [Run]
-; Start the server immediately after install
-Filename: "{app}\server.exe"; Description: "Start OCR server now"; Flags: nowait runhidden postinstall
+; Launch server immediately after install (hidden, no console window)
+Filename: "{app}\{#MyAppExeName}"; Description: "Start OCR server now"; Flags: nowait runhidden postinstall
 
 [UninstallRun]
-; Stop server on uninstall
+; Kill the server process on uninstall
 Filename: "taskkill"; Parameters: "/F /IM server.exe"; Flags: runhidden
 
 [UninstallDelete]
-; Clean up database and thumbnails
 Type: filesandordirs; Name: "{app}\data"
-Type: files; Name: "{app}\ocr_invoice.db"
+Type: files;          Name: "{app}\ocr_invoice.db"
 
 [Code]
+// ---------------------------------------------------------------------------
+// After install: confirm the manifest was registered and show load instructions
+// ---------------------------------------------------------------------------
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then begin
-    MsgBox('Installation complete!' + #13#10 + #13#10 +
-           'To load the add-in in Excel:' + #13#10 +
-           '1. Open Excel' + #13#10 +
-           '2. Go to Insert > My Add-ins > Shared Folder' + #13#10 +
-           '3. Select "OCR Invoice Extraction"' + #13#10 + #13#10 +
-           'The OCR server starts automatically in the background.',
-           mbInformation, MB_OK);
+    MsgBox(
+      'Installation complete!' + #13#10 + #13#10 +
+      'To load the add-in in Excel:' + #13#10 +
+      '  1. Open Excel' + #13#10 +
+      '  2. File > Options > Trust Center > Trust Center Settings' + #13#10 +
+      '     > Trusted Add-in Catalogs' + #13#10 +
+      '  3. The catalog path "' + ExpandConstant('{app}') + '" should' + #13#10 +
+      '     already appear. If not, add it manually and tick "Show in Menu".' + #13#10 +
+      '  4. Insert > My Add-ins > Shared Folder > OCR Invoice Extraction' + #13#10 + #13#10 +
+      'The OCR server (localhost:7432) starts automatically in the background.' + #13#10 + #13#10 +
+      'Optional: edit ' + ExpandConstant('{app}') + '\.env to add your' + #13#10 +
+      'ANTHROPIC_API_KEY for AI-powered Form Extraction and Summarization.',
+      mbInformation, MB_OK);
   end;
 end;

@@ -1,13 +1,14 @@
 """FastAPI application entry point."""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 
 from config import settings
 from core.logging import setup_logging
 from db.session import init_db
 from ocr.registry import init_default_engines
-from bundled import configure_environment
+from bundled import configure_environment, get_taskpane_dir
 
 # Import all models so SQLAlchemy can create tables
 from db.models.document import Document, DocumentPage  # noqa: F401
@@ -40,10 +41,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Allow Task Pane (localhost:3000) to call this server
+# Allow Task Pane to call this server (dev on :3000, production served from :7432)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://localhost:3000", "null"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://localhost:3000",
+        "http://localhost:7432",
+        "https://localhost:7432",
+        "null",          # file:// origin used by some Office.js versions
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,6 +70,13 @@ app.include_router(export.router, prefix="/api/v1")
 @app.get("/health")
 def health():
     return {"status": "ok", "version": "1.0.0"}
+
+
+# Serve the built Task Pane static files at /taskpane/
+# This allows the production installer manifest to reference http://localhost:7432/taskpane/
+_taskpane_dir = get_taskpane_dir()
+if _taskpane_dir:
+    app.mount("/taskpane", StaticFiles(directory=str(_taskpane_dir), html=True), name="taskpane")
 
 
 if __name__ == "__main__":

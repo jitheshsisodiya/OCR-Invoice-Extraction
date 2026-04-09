@@ -1,42 +1,68 @@
 @echo off
 REM ============================================================
-REM Build the Python FastAPI server into a standalone .exe
-REM using PyInstaller.  Run this script from the repo root on
+REM Build the Python FastAPI server into a standalone directory
+REM using PyInstaller.  Run this script from the REPO ROOT on
 REM Windows after placing the required binaries (see below).
 REM
 REM Required before running:
 REM   server\tessdata\       - eng.traineddata, osd.traineddata
 REM                            (already present in repo)
 REM   server\poppler\bin\    - pdftoppm.exe, pdfinfo.exe, etc.
-REM                            Download from:
-REM                            https://github.com/oschwartz10612/poppler-windows/releases
+REM                            Run: powershell scripts\fetch_windows_binaries.ps1
 REM   server\tesseract\      - tesseract.exe + all DLLs
-REM                            Download portable build from:
-REM                            https://github.com/UB-Mannheim/tesseract/wiki
+REM                            Run: powershell scripts\fetch_windows_binaries.ps1
+REM
+REM Output: dist\server\   (used by Inno Setup build.iss)
 REM ============================================================
+setlocal
 
-echo [1/4] Verifying required binaries...
+echo ============================================================
+echo  OCR Invoice Extraction - Server Build
+echo ============================================================
+
+REM ── [1/5] Verify required binaries ───────────────────────────────────────────
+echo [1/5] Verifying required binaries...
 if not exist "server\tessdata\eng.traineddata" (
     echo ERROR: server\tessdata\eng.traineddata not found.
+    echo        Run: powershell scripts\fetch_windows_binaries.ps1
     exit /b 1
 )
 if not exist "server\poppler\bin\pdftoppm.exe" (
     echo ERROR: server\poppler\bin\pdftoppm.exe not found.
-    echo        Download Poppler for Windows: https://github.com/oschwartz10612/poppler-windows/releases
+    echo        Run: powershell scripts\fetch_windows_binaries.ps1
     exit /b 1
 )
 if not exist "server\tesseract\tesseract.exe" (
     echo ERROR: server\tesseract\tesseract.exe not found.
-    echo        Download: https://github.com/UB-Mannheim/tesseract/wiki
+    echo        Run: powershell scripts\fetch_windows_binaries.ps1
     exit /b 1
 )
 
-echo [2/4] Installing Python dependencies...
-cd server
-pip install -r requirements.txt
-pip install pyinstaller
+REM ── [2/5] Build task pane (must be done before server so we can embed it) ─────
+echo [2/5] Building Task Pane...
+if not exist "taskpane\node_modules" (
+    echo   Installing npm packages...
+    cd taskpane
+    call npm install
+    cd ..
+)
+cd taskpane
+call npm run build
+if errorlevel 1 (
+    echo ERROR: Task Pane build failed.
+    exit /b 1
+)
+cd ..
+echo   Task Pane built to taskpane\dist\
 
-echo [3/4] Running PyInstaller...
+REM ── [3/5] Install Python deps ──────────────────────────────────────────────
+echo [3/5] Installing Python dependencies...
+cd server
+pip install -r requirements.txt --quiet
+pip install pyinstaller --quiet
+
+REM ── [4/5] Run PyInstaller ─────────────────────────────────────────────────
+echo [4/5] Running PyInstaller...
 pyinstaller --onedir ^
   --name server ^
   --distpath ..\dist ^
@@ -44,6 +70,7 @@ pyinstaller --onedir ^
   --add-data "tessdata;tessdata" ^
   --add-data "poppler;poppler" ^
   --add-data "tesseract;tesseract" ^
+  --add-data "..\taskpane\dist;taskpane" ^
   --hidden-import uvicorn.logging ^
   --hidden-import uvicorn.loops ^
   --hidden-import uvicorn.loops.auto ^
@@ -61,7 +88,26 @@ pyinstaller --onedir ^
   --collect-all easyocr ^
   --collect-all pytesseract ^
   main.py
-
-echo [4/4] Done. Output: dist\server\server.exe
+if errorlevel 1 (
+    echo ERROR: PyInstaller failed.
+    cd ..
+    exit /b 1
+)
 cd ..
+
+REM ── [5/5] Verify output ────────────────────────────────────────────────────
+echo [5/5] Verifying output...
+if not exist "dist\server\server.exe" (
+    echo ERROR: dist\server\server.exe not found after build.
+    exit /b 1
+)
+echo.
+echo ============================================================
+echo  Build complete!
+echo    Server bundle : dist\server\
+echo    Task Pane dist: taskpane\dist\  (also embedded in bundle)
+echo.
+echo  Next step: open installer\build.iss in Inno Setup Compiler
+echo  or run:   "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\build.iss
+echo ============================================================
 pause
