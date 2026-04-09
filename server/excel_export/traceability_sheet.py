@@ -28,7 +28,8 @@ def create_source_map_sheet(wb: Workbook, clips: list) -> None:
         bbox_str = ""
         if clip.bbox:
             try:
-                b = json.loads(clip.bbox)
+                # bbox is a JSON column (dict), but guard against legacy string values
+                b = clip.bbox if isinstance(clip.bbox, dict) else json.loads(clip.bbox)
                 bbox_str = f"{b.get('x1',0):.3f},{b.get('y1',0):.3f},{b.get('x2',0):.3f},{b.get('y2',0):.3f}"
             except Exception:
                 pass

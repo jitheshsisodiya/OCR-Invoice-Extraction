@@ -55,7 +55,8 @@ desktop.ini
 *.swo
 
 # EasyOCR models (large, downloaded at runtime)
-models/
+server/models/
+easyocr_models/
 
 # Coverage
 .coverage

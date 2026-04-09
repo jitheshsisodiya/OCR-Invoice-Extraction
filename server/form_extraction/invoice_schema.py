@@ -13,15 +13,22 @@ INVOICE_FIELDS = [
         "key": "invoice_number",
         "label": "Invoice Number",
         "patterns": [
-            r"(?:invoice\s*(?:no|number|#)|inv\s*#?)[:\s]*([A-Z0-9\-/]+)",
+            # Require "invoice" followed by no|number|# — avoids matching bare "INVOICE" heading
+            r"invoice\s*(?:no|number|#)[:\s]*([A-Z0-9\-/]+)",
+            # Standalone "inv" as abbreviation (word-boundary, must be followed by separator)
+            r"\binv\b[:\s#]*([A-Z0-9\-/]+)",
         ],
     },
     {
         "key": "invoice_date",
         "label": "Invoice Date",
         "patterns": [
-            r"(?:invoice\s+date|date\s+of\s+invoice|date)[:\s]+(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})",
-            r"(?:invoice\s+date|date)[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4})",
+            # DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY
+            r"(?:invoice\s+date|date\s+of\s+invoice)[:\s]+(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})",
+            # DD-Mon-YYYY  e.g. 15-Mar-2024
+            r"(?:invoice\s+date|date\s+of\s+invoice)[:\s]+(\d{1,2}[\/\-][A-Za-z]{3}[\/\-]\d{4})",
+            # Month DD, YYYY  e.g. March 15, 2024
+            r"(?:invoice\s+date|date\s+of\s+invoice)[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4})",
         ],
     },
     {
@@ -29,6 +36,7 @@ INVOICE_FIELDS = [
         "label": "Due Date",
         "patterns": [
             r"(?:due\s+date|payment\s+due)[:\s]+(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})",
+            r"(?:due\s+date|payment\s+due)[:\s]+(\d{1,2}[\/\-][A-Za-z]{3}[\/\-]\d{4})",
         ],
     },
     {

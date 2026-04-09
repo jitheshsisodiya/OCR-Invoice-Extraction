@@ -27,7 +27,7 @@ export async function getSelectionAddress(): Promise<string> {
 export async function writeCellValue(cellAddress: string, value: string): Promise<void> {
   return Excel.run(async (ctx) => {
     const ref = cellAddress.includes("!") ? cellAddress.split("!")[1] : cellAddress;
-    const sheet = ctx.workbook.activeWorksheet;
+    const sheet = ctx.workbook.worksheets.getActiveWorksheet();
     const cell = sheet.getRange(ref);
     cell.values = [[value]];
     await ctx.sync();
@@ -39,7 +39,7 @@ export async function writeTableValues(startCell: string, data: string[][]): Pro
   if (!data.length) return;
   return Excel.run(async (ctx) => {
     const ref = startCell.includes("!") ? startCell.split("!")[1] : startCell;
-    const sheet = ctx.workbook.activeWorksheet;
+    const sheet = ctx.workbook.worksheets.getActiveWorksheet();
     const range = sheet.getRange(ref).getResizedRange(data.length - 1, data[0].length - 1);
     range.values = data;
     await ctx.sync();
@@ -50,7 +50,7 @@ export async function writeTableValues(startCell: string, data: string[][]): Pro
 export async function writeFormula(cellAddress: string, formula: string): Promise<void> {
   return Excel.run(async (ctx) => {
     const ref = cellAddress.includes("!") ? cellAddress.split("!")[1] : cellAddress;
-    const sheet = ctx.workbook.activeWorksheet;
+    const sheet = ctx.workbook.worksheets.getActiveWorksheet();
     const cell = sheet.getRange(ref);
     cell.formulas = [[formula]];
     await ctx.sync();
@@ -61,7 +61,7 @@ export async function writeFormula(cellAddress: string, formula: string): Promis
 export async function setCellFill(cellAddress: string, hexColor: string): Promise<void> {
   return Excel.run(async (ctx) => {
     const ref = cellAddress.includes("!") ? cellAddress.split("!")[1] : cellAddress;
-    const sheet = ctx.workbook.activeWorksheet;
+    const sheet = ctx.workbook.worksheets.getActiveWorksheet();
     const cell = sheet.getRange(ref);
     cell.format.fill.color = hexColor;
     await ctx.sync();
@@ -81,7 +81,7 @@ export async function applyValidationStyle(cellAddress: string, status: "validat
 /** Get the active sheet name. */
 export async function getActiveSheetName(): Promise<string> {
   return Excel.run(async (ctx) => {
-    const sheet = ctx.workbook.activeWorksheet;
+    const sheet = ctx.workbook.worksheets.getActiveWorksheet();
     sheet.load("name");
     await ctx.sync();
     return sheet.name;
