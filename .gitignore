@@ -30,9 +30,12 @@ data/thumbnails/
 data/exports/
 
 # PyInstaller
+dist/
+build/
 server/dist/
 server/build/
-*.spec
+# Auto-generated PyInstaller spec (but NOT installer/server.spec which is hand-written)
+server/*.spec
 
 # Node / taskpane
 taskpane/node_modules/

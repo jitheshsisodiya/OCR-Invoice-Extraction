@@ -80,10 +80,22 @@ if _taskpane_dir:
 
 
 if __name__ == "__main__":
+    import multiprocessing
+    # Required for PyInstaller frozen executables on all platforms
+    multiprocessing.freeze_support()
+
+    # On Windows, Python 3.8+ defaults to ProactorEventLoop which breaks uvicorn.
+    # Force SelectorEventLoop so that uvicorn works correctly in the bundled .exe.
+    import sys, asyncio
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
     import uvicorn
+    # When frozen by PyInstaller, pass the app object directly — the
+    # "main:app" string form requires dynamic import which fails in a bundle.
     uvicorn.run(
-        "main:app",
+        app,
         host=settings.host,
         port=settings.port,
-        reload=settings.debug,
+        reload=False,        # reload requires source files; never use in bundle
     )

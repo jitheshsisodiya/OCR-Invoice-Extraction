@@ -27,6 +27,8 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=lowest
+ArchitecturesInstallIn64BitMode=x64 arm64
+MinVersion=10.0
 ; Installer visuals
 WizardImageFile=assets\installer_banner.bmp
 WizardSmallImageFile=assets\installer_small.bmp
@@ -40,11 +42,10 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "startupentry"; Description: "Start OCR server automatically at Windows login"; GroupDescription: "Startup:"; Flags: unchecked
 
 [Files]
-; Python server bundle (PyInstaller --onedir output)
+; Python server bundle (PyInstaller --onedir output).
+; The taskpane dist is already bundled inside _internal\taskpane\ by server.spec,
+; so no separate taskpane copy is needed here.
 Source: "..\dist\server\*"; DestDir: "{app}\server"; Flags: ignoreversion recursesubdirs createallsubdirs
-
-; Task Pane web files (Vite build output)
-Source: "..\taskpane\dist\*"; DestDir: "{app}\taskpane"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Production manifest (references localhost:7432, not localhost:3000)
 Source: "..\taskpane\manifest.prod.xml"; DestDir: "{app}"; DestName: "manifest.xml"; Flags: ignoreversion
