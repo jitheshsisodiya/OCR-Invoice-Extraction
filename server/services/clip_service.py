@@ -1,6 +1,5 @@
 """Clip creation service — Text Clip, Table Clip, Calc Clip."""
 from __future__ import annotations
-import json
 from sqlalchemy.orm import Session
 from db.models.clip_mapping import ClipMapping
 from db.models.validation import ValidationRecord
@@ -72,13 +71,14 @@ def create_text_clip(
         session_id=session_id,
         clip_type="text",
         page_number=page_number,
-        bbox=json.dumps(bbox),
-        extracted_value=json.dumps(extracted_text),
+        bbox=bbox,
+        extracted_value=extracted_text,
         excel_cell=excel_cell,
         confidence=confidence,
         ocr_engine=engine_used,
     )
     db.add(clip)
+    db.flush()   # assign clip.id before creating ValidationRecord
     _add_pending_validation(db, clip)
     db.commit()
     db.refresh(clip)
@@ -115,13 +115,14 @@ def create_table_clip(
         session_id=session_id,
         clip_type="table",
         page_number=page_number,
-        bbox=json.dumps(bbox),
-        extracted_value=json.dumps(table_data),
+        bbox=bbox,
+        extracted_value=table_data,
         excel_range=excel_range,
         confidence=0.9 if tables else 0.0,
         ocr_engine="camelot" if doc_type == "digital" else "opencv+ocr",
     )
     db.add(clip)
+    db.flush()   # assign clip.id before creating ValidationRecord
     _add_pending_validation(db, clip)
     db.commit()
     db.refresh(clip)
@@ -154,13 +155,14 @@ def create_calc_clip(
         session_id=session_id,
         clip_type="calc",
         page_number=0,
-        bbox=json.dumps({}),
-        extracted_value=json.dumps(formula),
+        bbox={},
+        extracted_value=formula,
         excel_cell=excel_cell,
         confidence=1.0,
         ocr_engine="formula",
     )
     db.add(clip)
+    db.flush()   # assign clip.id before creating ValidationRecord
     _add_pending_validation(db, clip)
     db.commit()
     db.refresh(clip)

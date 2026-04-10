@@ -5,6 +5,7 @@ from datetime import datetime
 class DocumentOut(BaseModel):
     id: str
     filename: str
+    file_path: str
     source_type: str
     doc_type: str
     page_count: int

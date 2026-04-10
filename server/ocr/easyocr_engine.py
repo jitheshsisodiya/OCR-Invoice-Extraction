@@ -30,7 +30,7 @@ class EasyOCREngine(OCREngine):
             self._reader = easyocr.Reader([lang], **kwargs)
         return self._reader
 
-    def extract(self, image: Image.Image, lang: str = "eng") -> OCRResult:
+    def extract(self, image: Image.Image, lang: str = "en") -> OCRResult:
         try:
             reader = self._get_reader(lang)
             img_array = np.array(image)
@@ -67,7 +67,7 @@ class EasyOCREngine(OCREngine):
             engine=self.name,
         )
 
-    def extract_region(self, image: Image.Image, bbox_norm: dict, lang: str = "eng") -> OCRResult:
+    def extract_region(self, image: Image.Image, bbox_norm: dict, lang: str = "en") -> OCRResult:
         img_w, img_h = image.size
         x1 = int(bbox_norm["x1"] * img_w)
         y1 = int(bbox_norm["y1"] * img_h)

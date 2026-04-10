@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Any
 
 
 class BboxIn(BaseModel):
@@ -38,8 +39,8 @@ class ClipOut(BaseModel):
     session_id: str
     clip_type: str
     page_number: int
-    bbox: str | None
-    extracted_value: str | None
+    bbox: Any | None              # dict for text/table, {} for calc
+    extracted_value: Any | None   # str for text, list[list] for table
     excel_cell: str | None
     excel_range: str | None
     confidence: float
