@@ -15,7 +15,8 @@ import sys
 from pathlib import Path
 
 # Allow running spec from any directory
-SPEC_DIR   = Path(SPECFILE).parent          # installer/
+# PyInstaller exposes the spec path as SPEC (not SPECFILE)
+SPEC_DIR   = Path(SPEC).parent             # installer/
 REPO_ROOT  = SPEC_DIR.parent               # repo root
 SERVER_DIR = REPO_ROOT / "server"
 
