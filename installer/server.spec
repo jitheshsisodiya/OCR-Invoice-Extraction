@@ -80,13 +80,18 @@ a = Analysis(
     optimize=1,
 )
 
-# Collect all EasyOCR and pytesseract package data
-from PyInstaller.utils.hooks import collect_all
+# Collect EasyOCR and pytesseract package data.
+# Use index access to handle API differences across PyInstaller 5/6.
+from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
 for pkg in ("easyocr", "pytesseract"):
-    pkg_datas, pkg_binaries, pkg_hiddenimports = collect_all(pkg)
-    a.datas     += pkg_datas
-    a.binaries  += pkg_binaries
-    a.hiddenimports += pkg_hiddenimports
+    try:
+        a.datas    += collect_data_files(pkg)
+    except Exception:
+        pass
+    try:
+        a.binaries += collect_dynamic_libs(pkg)
+    except Exception:
+        pass
 
 pyz = PYZ(a.pure)
 
